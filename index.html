@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Calm Journal</title>
+  <meta name="description" content="A calm five-minute journal">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Journal">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f4f1ea">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" aria-live="polite"></main>
+  <nav id="nav" aria-label="Main">
+    <button data-nav="home">Today</button>
+    <button data-nav="history">Journal</button>
+    <button data-nav="insights">Insights</button>
+    <button data-nav="settings">Settings</button>
+  </nav>
+  <div id="toast" role="status"></div>
+  <div id="modal-root"></div>
+  <input type="file" id="file-input" hidden>
+  <noscript>Calm Journal needs JavaScript.</noscript>
+  <script src="app.js"></script>
+</body>
+</html>
