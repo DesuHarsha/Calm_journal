@@ -1,0 +1,26 @@
+/* Calm Journal To-Do tab */
+#app .todo-page{max-width:720px;margin:0 auto;padding:20px 16px 110px;color:var(--text,#292923)}
+#app .todo-heading{display:flex;justify-content:space-between;margin-bottom:18px}
+#app .todo-heading h1{margin:0;font-size:clamp(26px,7vw,34px);letter-spacing:-.04em}
+#app .todo-subtitle{margin:7px 0 0;opacity:.68;font-size:14px}
+#app .todo-progress{margin:18px 0;padding:15px 16px;border:1px solid rgba(100,90,70,.16);border-radius:18px;background:rgba(255,255,255,.45)}
+#app .todo-progress-top{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:10px}
+#app .todo-progress-track{height:6px;background:rgba(100,90,70,.14);border-radius:99px;overflow:hidden}
+#app .todo-progress-fill{height:100%;background:#7d8b68;border-radius:99px;transition:width .2s}
+#app .todo-add{display:flex;gap:8px;margin:18px 0}
+#app .todo-add input{flex:1;min-width:0;padding:13px 14px;border:1px solid rgba(100,90,70,.25);border-radius:14px;background:rgba(255,255,255,.75);color:inherit;font:inherit;font-size:16px}
+#app .todo-add button{border:0;border-radius:13px;padding:0 16px;background:#59684b;color:white;font:inherit;font-weight:600;min-height:44px}
+#app .todo-section-label{margin:22px 2px 9px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;opacity:.65;font-weight:700}
+#app .todo-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+#app .todo-item{display:flex;align-items:center;gap:11px;padding:13px 12px;border:1px solid rgba(100,90,70,.14);border-radius:15px;background:rgba(255,255,255,.52)}
+#app .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 22px;width:22px;height:22px;margin:0;border:1.5px solid #89917e;border-radius:50%;display:grid;place-items:center}
+#app .todo-check:checked{background:#758466;border-color:#758466}
+#app .todo-check:checked:after{content:"✓";color:white;font-size:14px;font-weight:700}
+#app .todo-task-text{flex:1;min-width:0;overflow-wrap:anywhere;font-size:15px;line-height:1.4}
+#app .todo-item.is-done .todo-task-text{text-decoration:line-through;opacity:.55}
+#app .todo-task-meta{display:block;margin-top:4px;font-size:11px;opacity:.58}
+#app .todo-delete{border:0;background:transparent;color:inherit;opacity:.5;padding:8px;font-size:20px}
+#app .todo-empty{text-align:center;padding:28px 16px;opacity:.65;border:1px dashed rgba(100,90,70,.25);border-radius:16px;font-size:14px}
+#app .todo-note{margin-top:22px;font-size:12px;line-height:1.5;opacity:.6}
+#nav button[data-nav=todo].active,#nav button[data-nav=todo][aria-current=page]{font-weight:700}
+@media(max-width:420px){#app .todo-page{padding:18px 14px 100px}#app .todo-add button{padding:0 13px}}

@@ -15,12 +15,14 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="todo.css">
 </head>
 <body>
   <main id="app" aria-live="polite"></main>
   <nav id="nav" aria-label="Main">
     <button data-nav="home">Today</button>
     <button data-nav="history">Journal</button>
+    <button data-nav="todo">To-Do</button>
     <button data-nav="insights">Insights</button>
     <button data-nav="settings">Settings</button>
   </nav>
@@ -29,5 +31,6 @@
   <input type="file" id="file-input" hidden>
   <noscript>Calm Journal needs JavaScript.</noscript>
   <script src="app.js"></script>
+  <script src="todo.js"></script>
 </body>
 </html>
