@@ -596,7 +596,7 @@ function viewEditor() {
   const ed = S.editor, t = TEMPLATES[ed.kind];
   const field = (key, hint, multi, num) => multi
     ? `<textarea data-key="${key}" placeholder="${esc(hint)}" rows="3">${esc(ed.data[key] || '')}</textarea>`
-    : `<div class="numbered"><span>${num}.</span><input type="text" data-key="${key}" placeholder="${esc(hint)}" value="${esc(ed.data[key] || '')}" enterkeyhint="next"></div>`;
+    : `<div class="numbered"><span>${num}.</span><textarea class="numbered-answer" data-key="${key}" placeholder="${esc(hint)}" rows="1">${esc(ed.data[key] || '')}</textarea></div>`;
   let form = '';
   for (const sec of t.sections) {
     form += `<label class="field-label">${esc(sec.header)}</label>`;
@@ -734,6 +734,7 @@ function render() {
   document.body.classList.toggle('no-nav', S.locked || S.view === 'editor');
   const views = {home: viewHome, editor: viewEditor, history: viewHistory, insights: viewInsights, settings: viewSettings};
   $('#app').innerHTML = S.locked ? viewLock() : views[S.view]();
+  $('#app').querySelectorAll('textarea.numbered-answer').forEach((t) => { t.style.height = 'auto'; t.style.height = `${Math.max(50, t.scrollHeight)}px`; });
   document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('on', b.dataset.nav === S.view));
   if (!S.locked && S.view === 'settings') { renderSnapshots(); renderPersistStatus(); }
 }
@@ -940,6 +941,7 @@ document.addEventListener('click', (ev) => {
 document.addEventListener('input', (ev) => {
   const t = ev.target;
   if (t.dataset.key && S.editor) { S.editor.data[t.dataset.key] = t.value; scheduleAutosave(); }
+  if (t.matches('textarea.numbered-answer')) { t.style.height = 'auto'; t.style.height = `${Math.max(50, t.scrollHeight)}px`; }
   if (t.id === 'search') {
     S.search = t.value;
     const list = viewHistory().split('<div id="history-list">')[1];

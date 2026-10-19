@@ -11,7 +11,7 @@ const save=a=>{try{localStorage.setItem(KEY,JSON.stringify(a));return true}catch
 let opened=false;
 function render(){
  opened=true;
- nav.querySelectorAll('[data-nav]').forEach(b=>{const active=b.dataset.nav==='todo';b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+ nav.querySelectorAll('[data-nav]').forEach(b=>{const active=b.dataset.nav==='todo';b.classList.toggle('on',active);b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
  const tasks=load(), pending=tasks.filter(t=>!t.completed).sort((a,b)=>(a.createdDate||'').localeCompare(b.createdDate||'')||(a.createdAt||0)-(b.createdAt||0));
  const done=tasks.filter(t=>t.completed&&t.completedDate===day()), pct=pending.length+done.length?Math.round(done.length/(pending.length+done.length)*100):0;
  const item=(t,isDone=false)=>`<li class="todo-item ${t.completed?'is-done':''}"><input class="todo-check" type="checkbox" data-check="${esc(t.id)}" aria-label="Mark task complete" ${t.completed?'checked':''}><span class="todo-task-text">${esc(t.text)}<span class="todo-task-meta">${isDone?'Completed '+dateLabel(t.completedDate):(t.createdDate&&t.createdDate!==day()?'Carryover · added '+dateLabel(t.createdDate):'Today')}</span></span><button class="todo-delete" type="button" data-delete="${esc(t.id)}" aria-label="Delete task">×</button></li>`;

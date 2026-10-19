@@ -3,16 +3,16 @@
 #app .todo-heading{display:flex;justify-content:space-between;margin-bottom:18px}
 #app .todo-heading h1{margin:0;font-size:clamp(26px,7vw,34px);letter-spacing:-.04em}
 #app .todo-subtitle{margin:7px 0 0;opacity:.68;font-size:14px}
-#app .todo-progress{margin:18px 0;padding:15px 16px;border:1px solid rgba(100,90,70,.16);border-radius:18px;background:rgba(255,255,255,.45)}
+#app .todo-progress{margin:18px 0;padding:15px 16px;border:1px solid rgba(100,90,70,.16);border-radius:18px;background:var(--card,#fffdf8)}
 #app .todo-progress-top{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:10px}
 #app .todo-progress-track{height:6px;background:rgba(100,90,70,.14);border-radius:99px;overflow:hidden}
 #app .todo-progress-fill{height:100%;background:#7d8b68;border-radius:99px;transition:width .2s}
 #app .todo-add{display:flex;gap:8px;margin:18px 0}
-#app .todo-add input{flex:1;min-width:0;padding:13px 14px;border:1px solid rgba(100,90,70,.25);border-radius:14px;background:rgba(255,255,255,.75);color:inherit;font:inherit;font-size:16px}
+#app .todo-add input{flex:1;min-width:0;padding:13px 14px;border:1px solid rgba(100,90,70,.25);border-radius:14px;background:var(--input,#faf8f2);color:var(--text,#3b3833);font:inherit;font-size:16px}
 #app .todo-add button{border:0;border-radius:13px;padding:0 16px;background:#59684b;color:white;font:inherit;font-weight:600;min-height:44px}
 #app .todo-section-label{margin:22px 2px 9px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;opacity:.65;font-weight:700}
 #app .todo-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
-#app .todo-item{display:flex;align-items:center;gap:11px;padding:13px 12px;border:1px solid rgba(100,90,70,.14);border-radius:15px;background:rgba(255,255,255,.52)}
+#app .todo-item{display:flex;align-items:center;gap:11px;padding:13px 12px;border:1px solid rgba(100,90,70,.14);border-radius:15px;background:var(--card,#fffdf8)}
 #app .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 22px;width:22px;height:22px;margin:0;border:1.5px solid #89917e;border-radius:50%;display:grid;place-items:center}
 #app .todo-check:checked{background:#758466;border-color:#758466}
 #app .todo-check:checked:after{content:"✓";color:white;font-size:14px;font-weight:700}
@@ -24,3 +24,21 @@
 #app .todo-note{margin-top:22px;font-size:12px;line-height:1.5;opacity:.6}
 #nav button[data-nav=todo].active,#nav button[data-nav=todo][aria-current=page]{font-weight:700}
 @media(max-width:420px){#app .todo-page{padding:18px 14px 100px}#app .todo-add button{padding:0 13px}}
+
+/* Night-mode contrast: use the journal theme tokens instead of translucent white. */
+[data-theme="night"] #app .todo-progress { background: var(--card); border-color: var(--line); }
+[data-theme="night"] #app .todo-progress-track { background: #414943; }
+[data-theme="night"] #app .todo-progress-fill { background: #9fc7a5; }
+[data-theme="night"] #app .todo-add input { background: #252b28; color: #f2f0e9; border-color: #59645c; caret-color: #f2f0e9; }
+[data-theme="night"] #app .todo-add input::placeholder { color: #b7c0b8; opacity: 1; }
+[data-theme="night"] #app .todo-add button { background: #9fc7a5; color: #17231b; }
+[data-theme="night"] #app .todo-item { background: #252b28; border-color: #414943; }
+[data-theme="night"] #app .todo-check { border-color: #a4b79e; }
+[data-theme="night"] #app .todo-check:checked { background: #9fc7a5; border-color: #9fc7a5; }
+[data-theme="night"] #app .todo-check:checked:after { color: #17231b; }
+[data-theme="night"] #app .todo-delete { color: #f2f0e9; opacity: .78; }
+[data-theme="night"] #app .todo-empty { border-color: #59645c; }
+/* Single-line journal prompts are textareas so long answers wrap and grow vertically. */
+#app textarea.numbered-answer { display:block; min-height:50px; height:50px; resize:none; overflow-y:hidden; overflow-wrap:anywhere; white-space:pre-wrap; word-break:break-word; line-height:1.45; }
+#app .numbered:has(textarea.numbered-answer) { align-items:flex-start; }
+#app .numbered textarea.numbered-answer { flex:1; min-width:0; }
