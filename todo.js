@@ -7,7 +7,7 @@ const day=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateLabel=k=>{if(!k)return 'Earlier';const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{month:'short',day:'numeric'})};
 const load=()=>{try{const a=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(a)?a.filter(t=>t&&t.id&&typeof t.text==='string'):[]}catch(_){return []}};
-const save=a=>{try{localStorage.setItem(KEY,JSON.stringify(a));return true}catch(_){alert('Could not save tasks on this device.');return false}};
+const save=a=>{try{localStorage.setItem(KEY,JSON.stringify(a));window.dispatchEvent(new Event('calm-tasks-changed'));return true}catch(_){alert('Could not save tasks on this device.');return false}};
 let opened=false;
 function render(){
  opened=true;
@@ -21,8 +21,8 @@ function render(){
  <h2 class="todo-section-label">To do · ${pending.length}</h2>${pending.length?`<ul class="todo-list">${pending.map(t=>item(t)).join('')}</ul>`:'<div class="todo-empty">You’re all caught up. Add a task when you’re ready.</div>'}
  ${done.length?`<h2 class="todo-section-label">Completed today · ${done.length}</h2><ul class="todo-list">${done.map(t=>item(t,true)).join('')}</ul>`:''}
  <p class="todo-note">Unfinished tasks carry forward automatically until completed or deleted. Tasks are saved in this browser on this iPhone.</p></section>`;
- document.getElementById('todo-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('todo-input'),text=input.value.trim();if(!text)return;const a=load();a.push({id:`${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,text,createdDate:day(),createdAt:Date.now(),completed:false,completedDate:null});if(save(a))render();const next=document.getElementById('todo-input');if(next)next.focus()});
- app.querySelectorAll('[data-check]').forEach(el=>el.addEventListener('change',()=>{const a=load(),t=a.find(x=>x.id===el.dataset.check);if(t){t.completed=el.checked;t.completedDate=el.checked?day():null;save(a);render()}}));
+ document.getElementById('todo-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('todo-input'),text=input.value.trim();if(!text)return;const a=load();a.push({id:`${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,text,createdDate:day(),createdAt:Date.now(),updatedAt:Date.now(),completed:false,completedDate:null});if(save(a))render();const next=document.getElementById('todo-input');if(next)next.focus()});
+ app.querySelectorAll('[data-check]').forEach(el=>el.addEventListener('change',()=>{const a=load(),t=a.find(x=>x.id===el.dataset.check);if(t){t.completed=el.checked;t.completedDate=el.checked?day():null;t.updatedAt=Date.now();save(a);render()}}));
  app.querySelectorAll('[data-delete]').forEach(el=>el.addEventListener('click',()=>{if(confirm('Delete this task?')){save(load().filter(t=>t.id!==el.dataset.delete));render()}}));
 }
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b||b.dataset.nav!=='todo'){if(opened){opened=false;nav.querySelectorAll('[data-nav="todo"]').forEach(x=>{x.classList.remove('active');x.removeAttribute('aria-current')})}return}e.preventDefault();e.stopImmediatePropagation();render()},true);

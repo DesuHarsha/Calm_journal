@@ -205,13 +205,45 @@ async function sha256Hex(text) {
 }
 const plainEntry = (e) => ({day: e.day, kind: e.kind, data: e.data, mood: e.mood ?? null, created_at: e.created_at, updated_at: e.updated_at});
 
+// To-do tasks are kept by todo.js in localStorage. They are included in backups as a "tasks" list.
+const TASKS_KEY = 'calm-journal-tasks-v1';
+function readTasks() {
+  try {
+    const a = JSON.parse(localStorage.getItem(TASKS_KEY) || '[]');
+    return Array.isArray(a) ? a.filter((t) => t && t.id && typeof t.text === 'string') : [];
+  } catch (e) { return []; }
+}
+function writeTasks(a) {
+  try { localStorage.setItem(TASKS_KEY, JSON.stringify(a)); return true; } catch (e) { return false; }
+}
+const hasAnyData = () => S.entries.size > 0 || readTasks().length > 0;
+const msToISO = (ms) => (Number.isFinite(ms) && ms > 0 ? new Date(ms).toISOString() : null);
+const isoToMs = (s) => { const t = Date.parse(s); return Number.isFinite(t) ? t : 0; };
+const plainTask = (t) => ({
+  id: String(t.id), text: t.text, completed: !!t.completed,
+  created_date: isValidISO(t.createdDate) ? t.createdDate : null,
+  completed_date: t.completed && isValidISO(t.completedDate) ? t.completedDate : null,
+  created_at: msToISO(t.createdAt), updated_at: msToISO(t.updatedAt || t.createdAt),
+});
+const taskFromBackup = (r) => {
+  const createdAt = isoToMs(r.created_at);
+  return {
+    id: String(r.id), text: r.text.trim().slice(0, 240), completed: !!r.completed,
+    createdDate: isValidISO(r.created_date) ? r.created_date : '', createdAt,
+    completedDate: r.completed && isValidISO(r.completed_date) ? r.completed_date : null,
+    updatedAt: isoToMs(r.updated_at) || createdAt,
+  };
+};
+
 async function buildBackup() {
   const entries = allEntries().map(plainEntry);
   const settings = {};
   for (const k of PORTABLE_SETTINGS) if (k in S.settings) settings[k] = S.settings[k];
+  const tasks = readTasks().map(plainTask);
   return {
     format: BACKUP_FORMAT, version: BACKUP_VERSION, app_version: APP_VERSION, created_at: utcNow(),
     entry_count: entries.length, checksum: await sha256Hex(canonical(entries)), settings, entries,
+    task_count: tasks.length, tasks_checksum: await sha256Hex(canonical(tasks)), tasks,
   };
 }
 const backupText = async () => JSON.stringify(sortKeys(await buildBackup()), null, 1);
@@ -232,11 +264,21 @@ async function parseBackup(text) {
   if (payload.checksum && payload.checksum !== await sha256Hex(canonical(entries))) {
     throw new Error('Backup file is damaged (checksum mismatch).');
   }
+  // To-do tasks are optional: backups made before they were added have no "tasks" list.
+  if (payload.tasks !== undefined) {
+    if (!Array.isArray(payload.tasks)) throw new Error('Backup has an invalid to-do list.');
+    if (payload.tasks_checksum && payload.tasks_checksum !== await sha256Hex(canonical(payload.tasks))) {
+      throw new Error('Backup file is damaged (to-do checksum mismatch).');
+    }
+    payload.restoredTasks = payload.tasks
+      .filter((r) => r && typeof r === 'object' && r.id && typeof r.text === 'string' && r.text.trim())
+      .map(taskFromBackup);
+  }
   return payload;
 }
 
 async function restoreBackup(payload, mode) {
-  const stats = {added: 0, updated: 0, skipped: 0};
+  const stats = {added: 0, updated: 0, skipped: 0, tasks_added: 0, tasks_updated: 0};
   if (mode === 'replace') { await DB.clear('entries'); S.entries.clear(); }
   const toWrite = [];
   for (const raw of payload.entries) {
@@ -252,6 +294,20 @@ async function restoreBackup(payload, mode) {
     toWrite.push(entry);
   }
   await DB.write('entries', (s) => toWrite.forEach((e) => s.put(e)));
+  if (payload.restoredTasks) {
+    if (mode === 'replace') {
+      writeTasks(payload.restoredTasks);
+      stats.tasks_added = payload.restoredTasks.length;
+    } else {
+      const byId = new Map(readTasks().map((t) => [t.id, t]));
+      for (const t of payload.restoredTasks) {
+        const ex = byId.get(t.id);
+        if (!ex) { byId.set(t.id, t); stats.tasks_added++; }
+        else if ((t.updatedAt || 0) > (ex.updatedAt || ex.createdAt || 0)) { byId.set(t.id, t); stats.tasks_updated++; }
+      }
+      writeTasks([...byId.values()]);
+    }
+  }
   if (mode === 'replace') {
     const st = payload.settings || {};
     if (['day', 'night', 'auto'].includes(st.theme)) await setSetting('theme', st.theme);
@@ -264,7 +320,7 @@ async function restoreBackup(payload, mode) {
 }
 
 async function snapshot(kind) {
-  if (!S.entries.size) return null;
+  if (!hasAnyData()) return null;
   const id = kind === 'auto' ? `auto-${todayISO()}` : `${kind}-${Date.now()}`;
   const snap = {id, kind, created_at: utcNow(), count: S.entries.size, text: await backupText()};
   await DB.put('snapshots', snap);
@@ -275,7 +331,7 @@ async function snapshot(kind) {
 }
 
 async function autoSnapshot() {
-  if (!setting('auto_backup', true) || !S.entries.size) return;
+  if (!setting('auto_backup', true) || !hasAnyData()) return;
   if (setting('last_snapshot_revision', -1) === setting('revision', 0)) return;
   await snapshot('auto');
   await setSetting('last_snapshot_revision', setting('revision', 0));
@@ -286,7 +342,7 @@ function scheduleBackupWork() {
   clearTimeout(backupTimer);
   backupTimer = setTimeout(async () => {
     try {
-      S.backupCache = S.entries.size ? {text: await backupText(), name: `calm-journal-backup-${todayISO()}.json`} : null;
+      S.backupCache = hasAnyData() ? {text: await backupText(), name: `calm-journal-backup-${todayISO()}.json`} : null;
       await autoSnapshot();
     } catch (e) { console.error(e); }
   }, 600);
@@ -697,7 +753,7 @@ function viewSettings() {
       <button class="btn ghost" data-act="import">Restore from a backup file</button>
       <button class="btn quiet" data-act="export-md">Export as readable text (Markdown)</button>
       <details style="margin-top:12px"><summary>Backups kept on this iPhone</summary><div id="snapshots" class="small muted">Loading...</div></details>
-      <p class="muted small">Backup files work with the Android version of Calm Journal too.</p></section>
+      <p class="muted small">Backups include your to-do tasks. Backup files also open in the Android version of Calm Journal, which may not restore the tasks.</p></section>
 
     <section class="card"><h2>Privacy</h2>
       <div class="setting"><div class="grow">PIN lock<div class="muted small">${setting('pin_hash') ? 'On' : 'Off'}. Keeps casual eyes out. Entries are stored only on this iPhone.</div></div>
@@ -783,16 +839,17 @@ async function restoreFromText(text, sourceLabel) {
   let payload;
   try { payload = await parseBackup(text); } catch (e) { return alertModal('Cannot restore', e.message); }
   const n = payload.entries.length;
-  const {v} = await modal('Restore backup', `<p>${esc(sourceLabel)} contains <b>${n}</b> entries (made ${esc(friendlyTime(payload.created_at))}).</p>
+  const {v} = await modal('Restore backup', `<p>${esc(sourceLabel)} contains <b>${n}</b> entries${payload.restoredTasks ? ` and <b>${payload.restoredTasks.length}</b> to-do tasks` : ''} (made ${esc(friendlyTime(payload.created_at))}).</p>
     <p class="small"><b>Merge</b> adds missing entries and keeps the newer version of each day.<br><b>Replace</b> deletes everything on this iPhone first.</p>
     <p class="muted small">A safety copy of your current journal is saved before restoring.</p>`,
   [['merge', 'Merge'], ['replace', 'Replace everything', 'danger'], ['cancel', 'Cancel', 'quiet']]);
   if (v !== 'merge' && v !== 'replace') return;
-  if (v === 'replace' && !(await confirmModal('Replace everything?', 'All entries on this iPhone will be replaced by the backup.', 'Replace', 'danger'))) return;
+  if (v === 'replace' && !(await confirmModal('Replace everything?', (payload.restoredTasks ? 'All entries and to-do tasks on this iPhone will be replaced by the backup.' : 'All entries on this iPhone will be replaced by the backup.'), 'Replace', 'danger'))) return;
   await snapshot('pre-restore');
   const st = await restoreBackup(payload, v);
   render();
-  toast(`Restored: ${st.added} added, ${st.updated} updated, ${st.skipped} unchanged`);
+  const taskNote = payload.restoredTasks ? `; to-dos: ${st.tasks_added} added${st.tasks_updated ? `, ${st.tasks_updated} updated` : ''}` : '';
+  toast(`Restored: ${st.added} added, ${st.updated} updated, ${st.skipped} unchanged${taskNote}`);
 }
 
 // ------------------------------------------------------------------ PIN flows
@@ -874,7 +931,7 @@ const actions = {
     S.editor = null; S.view = 'home'; render(); toast('Entry deleted');
   },
   export: async () => {
-    if (!S.entries.size) return toast('Nothing to back up yet');
+    if (!hasAnyData()) return toast('Nothing to back up yet');
     const b = S.backupCache || {text: await backupText(), name: `calm-journal-backup-${todayISO()}.json`};
     if (await shareFile(b.text, b.name, 'application/json')) { await setSetting('last_export_at', utcNow()); render(); toast('Backup saved'); }
   },
@@ -990,6 +1047,9 @@ async function start() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
 }
 
+// A task was added, ticked or deleted in the To-Do tab: refresh the backup copy.
+window.addEventListener('calm-tasks-changed', () => { S.backupCache = null; bumpRevision().catch((e) => console.error(e)); });
+
 // Exposed for automated tests.
-window.CalmJournal = {S, canonical, sha256Hex, parseBackup, buildBackup, backupText, summarize, bonusPrompt, ordinal, entryText, hashPin, verifyPin};
+window.CalmJournal = {S, readTasks, writeTasks, canonical, sha256Hex, parseBackup, buildBackup, backupText, summarize, bonusPrompt, ordinal, entryText, hashPin, verifyPin};
 start();
