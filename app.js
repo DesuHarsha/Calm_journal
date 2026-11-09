@@ -643,6 +643,8 @@ function viewHome() {
     ${S.entries.size && setting('backup_nudge', true) && daysSinceExport > 7 ? `<section class="card soft">
       <h2>Keep a copy safe</h2><p class="small">Last backup saved to Files: ${esc(friendlyTime(setting('last_export_at')))}. Save one to iCloud Drive so your journal survives a lost or replaced phone.</p>
       <button class="btn" data-act="export">Save backup to Files</button></section>` : ''}
+    ${day === today ? `<section class="card soft"><h2>Today’s picture</h2><p class="small">A lock screen picture with your to-do list and what will make today great.</p>
+      <button class="btn" data-act="wallpaper">Make today’s picture</button></section>` : ''}
     ${card('morning', day, TEMPLATES.morning.subtitle)}
     ${card('evening', day, TEMPLATES.evening.subtitle)}
     ${card('weekly', weekStart(day), `Week of ${shortDate(weekStart(day))}`)}`;
@@ -936,6 +938,7 @@ const actions = {
     if (await shareFile(b.text, b.name, 'application/json')) { await setSetting('last_export_at', utcNow()); render(); toast('Backup saved'); }
   },
   import: () => $('#file-input').click(),
+  wallpaper: () => (window.CalmWallpaper ? window.CalmWallpaper.open() : toast('The picture maker did not load. Reload the app.')),
   'export-md': async () => {
     if (!S.entries.size) return toast('Nothing to export yet');
     await shareFile(exportMarkdown(), `calm-journal-${todayISO()}.md`, 'text/plain');
